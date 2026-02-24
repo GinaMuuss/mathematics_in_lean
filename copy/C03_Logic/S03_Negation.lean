@@ -32,11 +32,23 @@ example (h : ∀ a, ∃ x, f x > a) : ¬FnHasUb f := by
   have : f x ≤ a := fnuba x
   linarith
 
-example (h : ∀ a, ∃ x, f x < a) : ¬FnHasLb f :=
-  sorry
+example (h : ∀ a, ∃ x, f x < a) : ¬FnHasLb f := by
+  intro h'
+  unfold FnHasLb at h'
+  rcases h' with ⟨w, hw⟩
+  unfold FnLb at hw
+  rcases (h w) with ⟨w2, hw2⟩
+  specialize hw w2
+  linarith
 
-example : ¬FnHasUb fun x ↦ x :=
-  sorry
+
+example : ¬FnHasUb fun x ↦ x := by
+  intro h
+  rcases h with ⟨ w, hw⟩
+  unfold FnUb at hw
+  specialize hw (w + 1)
+  dsimp at hw
+  linarith
 
 #check (not_le_of_gt : a > b → ¬a ≤ b)
 #check (not_lt_of_ge : a ≥ b → ¬a < b)
@@ -44,20 +56,31 @@ example : ¬FnHasUb fun x ↦ x :=
 #check (le_of_not_gt : ¬a > b → a ≤ b)
 
 example (h : Monotone f) (h' : f a < f b) : a < b := by
-  sorry
+  contrapose! h'
+  unfold Monotone at h
+  exact h h'
 
 example (h : a ≤ b) (h' : f b < f a) : ¬Monotone f := by
-  sorry
+  contrapose! h'
+  exact h' h
 
 example : ¬∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a ≤ b := by
   intro h
   let f := fun x : ℝ ↦ (0 : ℝ)
-  have monof : Monotone f := by sorry
+  have monof : Monotone f := by
+    intro a2 b2 ha2b2
+    rfl
   have h' : f 1 ≤ f 0 := le_refl _
-  sorry
+  specialize (h monof (a:=1) (b:=0) h')
+  linarith
+
 
 example (x : ℝ) (h : ∀ ε > 0, x < ε) : x ≤ 0 := by
-  sorry
+  contrapose! h
+  use x/2
+  constructor
+  linarith
+  linarith
 
 end
 
@@ -65,16 +88,20 @@ section
 variable {α : Type*} (P : α → Prop) (Q : Prop)
 
 example (h : ¬∃ x, P x) : ∀ x, ¬P x := by
-  sorry
+  contrapose! h
+  exact h
 
 example (h : ∀ x, ¬P x) : ¬∃ x, P x := by
-  sorry
+  contrapose! h
+  exact h
 
 example (h : ¬∀ x, P x) : ∃ x, ¬P x := by
-  sorry
+  contrapose! h
+  exact h
 
 example (h : ∃ x, ¬P x) : ¬∀ x, P x := by
-  sorry
+  contrapose! h
+  exact h
 
 example (h : ¬∀ x, P x) : ∃ x, ¬P x := by
   by_contra h'
@@ -85,10 +112,12 @@ example (h : ¬∀ x, P x) : ∃ x, ¬P x := by
   exact h' ⟨x, h''⟩
 
 example (h : ¬¬Q) : Q := by
-  sorry
+  contrapose! h
+  exact h
 
 example (h : Q) : ¬¬Q := by
-  sorry
+  contrapose! h
+  exact h
 
 end
 
@@ -96,7 +125,12 @@ section
 variable (f : ℝ → ℝ)
 
 example (h : ¬FnHasUb f) : ∀ a, ∃ x, f x > a := by
-  sorry
+  contrapose! h
+  obtain ⟨ a, ha⟩ := h
+  unfold FnHasUb
+  use a
+  exact ha
+
 
 example (h : ¬∀ a, ∃ x, f x > a) : FnHasUb f := by
   push_neg at h
@@ -108,7 +142,8 @@ example (h : ¬FnHasUb f) : ∀ a, ∃ x, f x > a := by
   exact h
 
 example (h : ¬Monotone f) : ∃ x y, x ≤ y ∧ f y < f x := by
-  sorry
+  contrapose! h
+  exact h
 
 example (h : ¬FnHasUb f) : ∀ a, ∃ x, f x > a := by
   contrapose! h
@@ -136,4 +171,3 @@ example (h : 0 < 0) : a > 37 := by
   contradiction
 
 end
-
