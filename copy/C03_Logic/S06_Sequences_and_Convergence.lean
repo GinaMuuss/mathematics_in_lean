@@ -26,6 +26,7 @@ theorem convergesTo_const (a : ℝ) : ConvergesTo (fun x : ℕ ↦ a) a := by
   rw [sub_self, abs_zero]
   apply εpos
 
+
 theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
       (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
     ConvergesTo (fun n ↦ s n + t n) (a + b) := by
@@ -35,7 +36,16 @@ theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
   rcases cs (ε / 2) ε2pos with ⟨Ns, hs⟩
   rcases ct (ε / 2) ε2pos with ⟨Nt, ht⟩
   use max Ns Nt
-  sorry
+  intro n hn
+  specialize hs n (le_of_max_le_left hn)
+  specialize ht n (le_of_max_le_right hn)
+  have h : (|s n - a| + |t n - b| < ε / 2 + ε / 2) := by linarith
+  norm_num at h
+  have h2: (|s n + t n - (a + b)| ≤ |s n - a| + |t n - b|) := by
+    rw [← sub_sub, add_sub_right_comm, add_sub_assoc]
+    apply (abs_add (s n - a) (t n - b))
+  apply lt_of_le_of_lt h2 h
+
 
 theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : ConvergesTo s a) :
     ConvergesTo (fun n ↦ c * s n) (c * a) := by
@@ -46,13 +56,39 @@ theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : Conver
     rw [h]
     ring
   have acpos : 0 < |c| := abs_pos.mpr h
-  sorry
+  unfold ConvergesTo
+  unfold ConvergesTo at cs
+  intro ε hε
+  have hcε : ε / |c| > 0 := by
+    exact div_pos hε acpos
+  specialize cs (ε/|c|) hcε
+  obtain ⟨ N, hN⟩ := cs
+  use N
+  intro n hn
+  specialize hN n hn
+  dsimp
+  rw [← mul_sub_left_distrib]
+  rw [abs_mul]
+  apply (lt_div_iff₀ acpos).1 at hN
+  linarith
+
 
 theorem exists_abs_le_of_convergesTo {s : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) :
     ∃ N b, ∀ n, N ≤ n → |s n| < b := by
   rcases cs 1 zero_lt_one with ⟨N, h⟩
   use N, |a| + 1
-  sorry
+  intro n hn
+  specialize h n hn
+  have h1: |s n - a| + |a| ≥ |s n - a + a| := by
+    exact abs_add_le (s n - a) a
+  simp at h1
+  apply (add_lt_add_iff_left |a|).2 at h
+  linarith
+
+example {a b c d: ℝ } (h: a < b) (h1: c < d) (h2: b > 0) (h3: d > 0): a*c < b*d := by
+  refine mul_lt_mul_of_nonneg_of_pos' ?_ h1 ?_ h2
+
+#check max_le_iff
 
 theorem aux {s t : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) (ct : ConvergesTo t 0) :
     ConvergesTo (fun n ↦ s n * t n) 0 := by
@@ -62,7 +98,23 @@ theorem aux {s t : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) (ct : Converges
   have Bpos : 0 < B := lt_of_le_of_lt (abs_nonneg _) (h₀ N₀ (le_refl _))
   have pos₀ : ε / B > 0 := div_pos εpos Bpos
   rcases ct _ pos₀ with ⟨N₁, h₁⟩
-  sorry
+  use (max N₀ N₁)
+  intro n hn
+  specialize h₁ n (max_le_iff.1 hn).2
+  specialize h₀ n (max_le_iff.1 hn).1
+  rw [sub_zero]
+  rw [sub_zero] at h₁
+  have h: |t n| * |s n| < ε / B * B
+  refine mul_lt_mul_of_nonneg_of_pos' ?_ ?_ ?_ ?_
+  exact le_of_lt h₁
+  exact h₀
+  exact abs_nonneg (s n)
+  exact pos₀
+  rw [abs_mul]
+  have h1: ε / B * B = ε := by sorry
+  rw [h1] at h
+  linarith
+
 
 theorem convergesTo_mul {s t : ℕ → ℝ} {a b : ℝ}
       (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
@@ -100,4 +152,3 @@ def ConvergesTo' (s : α → ℝ) (a : ℝ) :=
   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
 
 end
-
