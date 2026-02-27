@@ -72,8 +72,35 @@ example {m n : ℕ} (coprime_mn : m.Coprime n) : m ^ 2 ≠ 2 * n ^ 2 := by
     exact this
   norm_num at this
 
+
+theorem divprime_of_divprime_sqr {m p: ℕ} (prime_p : p.Prime) (h : p ∣ m ^ 2) : p ∣ m := by
+  rw [pow_two, prime_p.dvd_mul] at h
+  cases h <;> assumption
+
 example {m n p : ℕ} (coprime_mn : m.Coprime n) (prime_p : p.Prime) : m ^ 2 ≠ p * n ^ 2 := by
-  sorry
+  intro sqr_eq
+  have : p ∣ m := by
+    apply divprime_of_divprime_sqr prime_p
+    rw [sqr_eq]
+    norm_num
+  obtain ⟨k, meq⟩ := dvd_iff_exists_eq_mul_left.mp this
+  have : p * (p * k ^ 2) = p * n ^ 2 := by
+    rw [← sqr_eq, meq]
+    ring
+  have : p * k ^ 2 = n ^ 2 := by
+    apply (mul_right_inj' _).mp this
+    exact prime_p.ne_zero
+  have : p ∣ n := by
+    apply divprime_of_divprime_sqr prime_p
+    rw [this.symm]
+    norm_num
+  have : p ∣ m.gcd n := by
+    (expose_names; exact Nat.dvd_gcd this_1 this)
+  have : p ∣ 1 := by
+    rw [coprime_mn] at this
+    exact this
+  norm_num at this
+  exact prime_p.ne_one this
 #check Nat.primeFactorsList
 #check Nat.prime_of_mem_primeFactorsList
 #check Nat.prod_primeFactorsList
@@ -98,9 +125,11 @@ example {m n p : ℕ} (nnz : n ≠ 0) (prime_p : p.Prime) : m ^ 2 ≠ p * n ^ 2 
   intro sqr_eq
   have nsqr_nez : n ^ 2 ≠ 0 := by simpa
   have eq1 : Nat.factorization (m ^ 2) p = 2 * m.factorization p := by
-    sorry
+    apply factorization_pow'
   have eq2 : (p * n ^ 2).factorization p = 2 * n.factorization p + 1 := by
-    sorry
+    rw [(factorization_mul' prime_p.ne_zero nsqr_nez), ( Nat.Prime.factorization' prime_p)]
+    rw [factorization_pow']
+    linarith
   have : 2 * m.factorization p % 2 = (2 * n.factorization p + 1) % 2 := by
     rw [← eq1, sqr_eq, eq2]
   rw [add_comm, Nat.add_mul_mod_self_left, Nat.mul_mod_right] at this
@@ -112,13 +141,19 @@ example {m n k r : ℕ} (nnz : n ≠ 0) (pow_eq : m ^ k = r * n ^ k) {p : ℕ} :
   · simp
   have npow_nz : n ^ k ≠ 0 := fun npowz ↦ nnz (pow_eq_zero npowz)
   have eq1 : (m ^ k).factorization p = k * m.factorization p := by
-    sorry
+    apply factorization_pow'
   have eq2 : ((r + 1) * n ^ k).factorization p =
       k * n.factorization p + (r + 1).factorization p := by
-    sorry
+    rw [factorization_mul', factorization_pow']
+    linarith
+    exact r.succ_ne_zero
+    exact npow_nz
   have : r.succ.factorization p = k * m.factorization p - k * n.factorization p := by
     rw [← eq1, pow_eq, eq2, add_comm, Nat.add_sub_cancel]
   rw [this]
-  sorry
+  -- Nat.dvd_sub' and Nat.dvd_mul_right
+  apply Nat.dvd_sub
+  apply Nat.dvd_mul_right
+  apply Nat.dvd_mul_right
 
 #check multiplicity

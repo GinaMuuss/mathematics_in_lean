@@ -45,18 +45,22 @@ theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p
 theorem primes_infinite : ∀ n, ∃ p > n, Nat.Prime p := by
   intro n
   have : 2 ≤ Nat.factorial n + 1 := by
-    sorry
+    apply Nat.succ_le_succ
+    exact Nat.succ_le_of_lt (Nat.factorial_pos _)
   rcases exists_prime_factor this with ⟨p, pp, pdvd⟩
   refine ⟨p, ?_, pp⟩
   show p > n
   by_contra ple
   push_neg at ple
   have : p ∣ Nat.factorial n := by
-    sorry
+    apply Nat.dvd_factorial pp.pos ple
   have : p ∣ 1 := by
-    sorry
+    rw [add_comm] at pdvd
+    apply (Nat.dvd_add_iff_right this).mpr
+    rw [add_comm] at pdvd
+    apply pdvd
   show False
-  sorry
+  exact pp.not_dvd_one this
 open Finset
 
 section
@@ -89,9 +93,13 @@ section
 variable {α : Type*} [DecidableEq α] (r s t : Finset α)
 
 example : (r ∪ s) ∩ (r ∪ t) = r ∪ s ∩ t := by
-  sorry
+  ext x
+  simp
+  tauto
 example : (r \ s) \ t = r \ (s ∪ t) := by
-  sorry
+  ext x
+  simp
+  tauto
 
 end
 
@@ -101,7 +109,9 @@ example (s : Finset ℕ) (n : ℕ) (h : n ∈ s) : n ∣ ∏ i ∈ s, i :=
 theorem _root_.Nat.Prime.eq_of_dvd_of_prime {p q : ℕ}
       (prime_p : Nat.Prime p) (prime_q : Nat.Prime q) (h : p ∣ q) :
     p = q := by
-  sorry
+  rcases (Nat.Prime.eq_one_or_self_of_dvd prime_q p h) with h1 | h1
+  exfalso; exact prime_p.ne_one h1
+  exact h1
 
 theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     (∀ n ∈ s, Nat.Prime n) → (p ∣ ∏ n ∈ s, n) → p ∈ s := by
@@ -111,7 +121,10 @@ theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     linarith [prime_p.two_le]
   simp [Finset.prod_insert ans, prime_p.dvd_mul] at h₀ h₁
   rw [mem_insert]
-  sorry
+  rcases h₁ with h | h
+  exact Or.inl ((Nat.prime_dvd_prime_iff_eq prime_p h₀.1).mp h)
+  exact Or.inr (ih h₀.2 h)
+
 example (s : Finset ℕ) (x : ℕ) : x ∈ s.filter Nat.Prime ↔ x ∈ s ∧ x.Prime :=
   mem_filter
 
@@ -224,4 +237,3 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
   have : p = 3 := by
     sorry
   contradiction
-
