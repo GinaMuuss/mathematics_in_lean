@@ -49,6 +49,9 @@ example (a b c : Nat) (h : a * b = a * c) (h' : a ≠ 0) : b = c :=
   -- apply? suggests the following:
   (mul_right_inj' h').mp h
 
+
+#check even_of_even_sqr
+#check Nat.dvd_gcd
 example {m n : ℕ} (coprime_mn : m.Coprime n) : m ^ 2 ≠ 2 * n ^ 2 := by
   intro sqr_eq
   have : 2 ∣ m := by
@@ -125,11 +128,10 @@ example {m n p : ℕ} (nnz : n ≠ 0) (prime_p : p.Prime) : m ^ 2 ≠ p * n ^ 2 
   intro sqr_eq
   have nsqr_nez : n ^ 2 ≠ 0 := by simpa
   have eq1 : Nat.factorization (m ^ 2) p = 2 * m.factorization p := by
-    apply factorization_pow'
-  have eq2 : (p * n ^ 2).factorization p = 2 * n.factorization p + 1 := by
-    rw [(factorization_mul' prime_p.ne_zero nsqr_nez), ( Nat.Prime.factorization' prime_p)]
     rw [factorization_pow']
-    linarith
+  have eq2 : (p * n ^ 2).factorization p = 2 * n.factorization p + 1 := by
+    rw [factorization_mul' prime_p.ne_zero nsqr_nez p]
+    rw [Nat.Prime.factorization' prime_p, factorization_pow', add_comm]
   have : 2 * m.factorization p % 2 = (2 * n.factorization p + 1) % 2 := by
     rw [← eq1, sqr_eq, eq2]
   rw [add_comm, Nat.add_mul_mod_self_left, Nat.mul_mod_right] at this

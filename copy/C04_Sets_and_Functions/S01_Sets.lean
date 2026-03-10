@@ -144,6 +144,30 @@ example : s \ t ∪ t \ s = (s ∪ t) \ (s ∩ t) := by
   exact (Or.inr ⟨ ha2, fun (h3: x ∈ s) => absurd ⟨h3, ha2 ⟩ hb⟩ )
 
 
+example : s \ t ∪ t \ s = (s ∪ t) \ (s ∩ t) := by
+  apply Subset.antisymm
+  -- First inclusion, from the left
+  . rintro x (⟨ha, hb⟩ | ⟨ha, hb⟩)
+  -- In case x is in s \ t
+    . exact ⟨Or.inl ha, (fun h2: x ∈ s ∩ t => (hb h2.right))⟩
+    -- In case x is in t \ s
+    exact ⟨Or.inr ha, (fun h2: x ∈ s ∩ t => (hb h2.left))⟩
+    -- Second inclusion
+  rintro x ⟨(ha | ha), hc⟩
+  -- First case, with x in s
+  . apply Or.inl
+    constructor
+    exact ha
+    by_contra h
+    exact hc (⟨ha, h⟩)
+  -- Second case, with x in t
+  apply Or.inr
+  constructor
+  exact ha
+  by_contra h
+  exact hc ⟨h, ha⟩
+
+
 def evens : Set ℕ :=
   { n | Even n }
 

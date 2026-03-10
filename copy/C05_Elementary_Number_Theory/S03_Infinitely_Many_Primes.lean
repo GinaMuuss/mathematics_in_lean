@@ -42,6 +42,8 @@ theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p
     use p, pp
     apply pdvd.trans mdvdn
 
+#check Nat.dvd_factorial
+#check Nat.dvd_sub
 theorem primes_infinite : ∀ n, ∃ p > n, Nat.Prime p := by
   intro n
   have : 2 ≤ Nat.factorial n + 1 := by
@@ -109,9 +111,10 @@ example (s : Finset ℕ) (n : ℕ) (h : n ∈ s) : n ∣ ∏ i ∈ s, i :=
 theorem _root_.Nat.Prime.eq_of_dvd_of_prime {p q : ℕ}
       (prime_p : Nat.Prime p) (prime_q : Nat.Prime q) (h : p ∣ q) :
     p = q := by
-  rcases (Nat.Prime.eq_one_or_self_of_dvd prime_q p h) with h1 | h1
-  exfalso; exact prime_p.ne_one h1
+  rcases Nat.Prime.eq_one_or_self_of_dvd prime_q p h with h1 | h1
+  . exfalso; exact prime_p.ne_one h1
   exact h1
+
 
 theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     (∀ n ∈ s, Nat.Prime n) → (p ∣ ∏ n ∈ s, n) → p ∈ s := by
@@ -138,15 +141,21 @@ theorem primes_infinite' : ∀ s : Finset Nat, ∃ p, Nat.Prime p ∧ p ∉ s :=
     simp [s'_def]
     apply h
   have : 2 ≤ (∏ i ∈ s', i) + 1 := by
-    sorry
+    simp
+    have d : ∀ i ∈ s', 0 < i := by
+      intro i is
+      exact (mem_s'.mp is).pos
+    have hd := Finset.prod_pos d
+    linarith
   rcases exists_prime_factor this with ⟨p, pp, pdvd⟩
   have : p ∣ ∏ i ∈ s', i := by
-    sorry
+    apply Finset.dvd_prod_of_mem
+    exact (mem_s'.mpr pp)
   have : p ∣ 1 := by
     convert Nat.dvd_sub pdvd this
     simp
   show False
-  sorry
+  exact pp.not_dvd_one this
 theorem bounded_of_ex_finset (Q : ℕ → Prop) :
     (∃ s : Finset ℕ, ∀ k, Q k → k ∈ s) → ∃ n, ∀ k, Q k → k < n := by
   rintro ⟨s, hs⟩
